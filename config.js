@@ -1,6 +1,6 @@
-var passwords = require("./passwords.json");
-
-if (!passwords.recaptcha2 && !passwords.coins){
+try {
+	var passwords = require("./passwords.json");
+} catch (e) {
 	var fs = require('fs');
 
 	fs.createReadStream('passwords.example.json').pipe(fs.createWriteStream('passwords.json'));

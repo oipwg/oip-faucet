@@ -3,7 +3,7 @@ const axios = require('axios');
 
 function isValidAddress (address, network) {
 	try {
-		let dec = bitcoin.address.fromBase58Check(address)
+		var dec = bitcoin.address.fromBase58Check(address)
 		return dec.version === network.pubKeyHash || dec.version === network.scriptHash
 	} catch (e) {
 		return false

@@ -30,23 +30,10 @@ const db = low(adapter);
 db.defaults({ one_time: [], interval: [] }).write();
 
 // In order to validate recaptcha submissions, we need to start up a new instance containing our siteKey and secretKey.
-// var recaptcha = new reCAPTCHA({
-// 	siteKey: config.recaptcha2.site_key,
-// 	secretKey: config.recaptcha2.secret_key,
-// })
-var recaptcha = {
-	validate: function(){
-		return {
-			then: function(thenFunc){
-				thenFunc();
-				return {
-					catch: function(){}
-				}
-			},
-			catch: function(catched){}
-		}
-	}
-}
+var recaptcha = new reCAPTCHA({
+	siteKey: config.recaptcha2.site_key,
+	secretKey: config.recaptcha2.secret_key,
+})
 
 // Start up the "app" (webserver)
 var app = express()
@@ -123,7 +110,7 @@ app.post('/faucet', upload.array(), function (req, res) {
 										} else if (req.body.type === "interval") {
 											if (config.coins[selected_coin].send_on_interval.enabled){
 												var timestampInterval = config.coins[selected_coin].send_on_interval.interval_hrs * MINUTES * SECONDS * MILISECONDS;
-												timestampInterval = 5 * 1000;
+
 												var find_ip = db.get('interval').find(function(o) {
 													if (o.ip === req.ip && o.currency_code === req.body.currency_code){
 														if (Date.now() < o.timestamp + timestampInterval)

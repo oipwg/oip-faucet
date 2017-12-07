@@ -59,6 +59,7 @@ function trySend (coin, type, db_title, address, db, req, res){
 				"address": req.body.depositAddress,
 				"amount": coin[type].amount,
 				"ip": req.ip,
+				"txid": success.txid, 
 				"status": "sent_successfully"
 			}).write();
 

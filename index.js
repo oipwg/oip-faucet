@@ -13,6 +13,10 @@ var config = require('./config.js');
 // Import the util file
 var util = require('./util.js');
 
+const MINUTES = 60;
+const SECONDS = 60;
+const MILISECONDS = 1000;
+
 // Import lowdb for database handling
 const low = require('lowdb')
 // FileSync will provide us with a way to save our db to a file
@@ -26,10 +30,23 @@ const db = low(adapter);
 db.defaults({ one_time: [], interval: [] }).write();
 
 // In order to validate recaptcha submissions, we need to start up a new instance containing our siteKey and secretKey.
-var recaptcha = new reCAPTCHA({
-	siteKey: config.recaptcha2.site_key,
-	secretKey: config.recaptcha2.secret_key,
-})
+// var recaptcha = new reCAPTCHA({
+// 	siteKey: config.recaptcha2.site_key,
+// 	secretKey: config.recaptcha2.secret_key,
+// })
+var recaptcha = {
+	validate: function(){
+		return {
+			then: function(thenFunc){
+				thenFunc();
+				return {
+					catch: function(){}
+				}
+			},
+			catch: function(catched){}
+		}
+	}
+}
 
 // Start up the "app" (webserver)
 var app = express()
@@ -55,7 +72,6 @@ app.get('/', function(req, res){
 app.post('/faucet', upload.array(), function (req, res) {
 	// Make sure that we have body values
 	if (req.body){
-		console.log(req.body);
 		if (req.body.currency_code){
 			// Create variable to track if the user submitted currency_code is supported
 			var currency_code_match = false;
@@ -87,52 +103,53 @@ app.post('/faucet', upload.array(), function (req, res) {
 									// Make sure that the type is defined as either "one_time" || "interval"
 									if (req.body.type){
 										if (req.body.type === "one_time"){
-											console.log(req.ip);
-											var find_ip = db.get('one_time').find({ ip: req.ip }).value();
+											if (config.coins[selected_coin].send_once.enabled){
+												var find_ip = db.get('one_time').filter({ ip: req.ip, currency_code: req.body.currency_code }).value();
 
-											console.log(find_ip);
-
-											if (!find_ip){
-												try {
-													//req.body.depositAddress
-													coinRPC.sendCoins(config.coins[selected_coin].rpc, config.coins[selected_coin].send_once.amount, "FKKP8hm5B5feSHBUNwqfMDbH42CDrwJ1iX", function(success){
-														db.get('one_time').push({
-															"timestamp": Date.now(),
-															"currency_code": req.body.currency_code,
-															"address": req.body.depositAddress,
-															"amount": config.coins[selected_coin].send_once.amount,
-															"ip": req.ip,
-															"status": "sent_successfully"
-														}).write();
-
-														console.log(db.get('one_time').find({"ip": req.ip}).value())
-
-														res.send(JSON.stringify({
-															"success": true,
-															"info": success
-														}))
-													}, function(error){
-														console.log(error);
-														res.send(JSON.stringify({
-															"success": false,
-															"error": error
-														}))
-													})
-												} catch (e) {
-													console.log(error);
+												if (!find_ip){
+													coinRPC.trySend(config.coins[selected_coin], "send_once", "one_time", req.body.depositAddress, db, req, res);
+												} else {
 													res.send(JSON.stringify({
-														"success": false,
-														"error": "ERROR_SENDING_COINS_TRY_AGAIN_LATER"
+														success: false,
+														error: "ONE_TIME_ALREADY_RECEIVED"
 													}))
 												}
 											} else {
 												res.send(JSON.stringify({
 													success: false,
-													error: "ONE_TIME_ALREADY_RECEIVED"
+													error: "SEND_ONCE_NOT_ENABLED"
 												}))
 											}
 										} else if (req.body.type === "interval") {
+											if (config.coins[selected_coin].send_on_interval.enabled){
+												var timestampInterval = config.coins[selected_coin].send_on_interval.interval_hrs * MINUTES * SECONDS * MILISECONDS;
+												timestampInterval = 5 * 1000;
+												var find_ip = db.get('interval').find(function(o) {
+													if (o.ip === req.ip && o.currency_code === req.body.currency_code){
+														if (Date.now() < o.timestamp + timestampInterval)
+															return true;
+														else 
+															return false;
+													} else
+														return false;
+												}).value();
 
+												if (!find_ip){ 
+													coinRPC.trySend(config.coins[selected_coin], "send_on_interval", "interval", req.body.depositAddress, db, req, res);
+												} else {
+													// User submitted an invalid faucet type
+													res.send(JSON.stringify({
+														success: false,
+														error: "ALREADY_RECEIVED_INTERVAL_FOR_NOW",
+														try_again_at: find_ip.timestamp + timestampInterval
+													}))
+												}
+											} else {
+												res.send(JSON.stringify({
+													success: false,
+													error: "SEND_ON_INTERVAL_NOT_ENABLED"
+												}))
+											}
 										} else {
 											// User submitted an invalid faucet type
 											res.send(JSON.stringify({

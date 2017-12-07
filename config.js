@@ -30,7 +30,7 @@ module.exports = {
 			"send_on_interval": {
 				"enabled": true,
 				"interval_hrs": 24,
-				"amount": "0.005",
+				"amount": 0.005,
 				"currency": "USD"
 			},
 			"currency_endpoints": {
@@ -39,7 +39,7 @@ module.exports = {
 					"api_endpoint": "https://api.coinmarketcap.com/v1/ticker/florincoin/",
 					"transform_api_data": function(api_data){
 						if (api_data && api_data[0] && api_data[0].price_usd){
-							return api_data[0].price_usd;
+							return parseFloat(api_data[0].price_usd);
 						} else {
 							return -1;
 						}

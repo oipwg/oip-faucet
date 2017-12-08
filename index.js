@@ -60,10 +60,11 @@ var corsOptionsDelegate = function (req, callback) {
   callback(null, corsOptions) // callback expects two parameters: error and options
 }
 
+app.use(cors(corsOptionsDelegate));
 
 // Listen to connections on "http://faucet:port/"
 // Respond with a status of being online.
-app.get('/', cors(corsOptionsDelegate), function(req, res){
+app.get('/', function(req, res){
 	var response = {
 		status: "online"
 	}
@@ -71,7 +72,7 @@ app.get('/', cors(corsOptionsDelegate), function(req, res){
 	res.send(JSON.stringify(response));
 })
 
-app.post('/check', [upload.array(), cors(corsOptionsDelegate)], function(req, res){
+app.post('/check', upload.array(), function(req, res){
 	var response = {
 		status: "online"
 	}
@@ -143,7 +144,7 @@ app.post('/check', [upload.array(), cors(corsOptionsDelegate)], function(req, re
 })
 
 // Listen to conenctions on "http://faucet:port/faucet"
-app.post('/request', [cors(corsOptionsDelegate), upload.array()], function (req, res) {
+app.post('/request', upload.array(), function (req, res) {
 	// Make sure that we have body values
 	if (req.body){
 		if (req.body.currency_code){

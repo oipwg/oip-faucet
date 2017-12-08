@@ -1,5 +1,7 @@
 // Import express as webserver connection
 var express = require('express');
+// Import cors for express
+var cors = require('cors')
 // Import other express assets needed to parse JSON from POST's
 var bodyParser = require('body-parser');
 var multer = require('multer');
@@ -46,10 +48,22 @@ app.use(bodyParser.json());
 // for parsing application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: true })); 
 
+// CORS stuff
+var whitelist = ['https://*.alexandria.io', 'http://localhost:*']
+var corsOptionsDelegate = function (req, callback) {
+  var corsOptions;
+  if (whitelist.indexOf(req.header('Origin')) !== -1) {
+    corsOptions = { origin: true } // reflect (enable) the requested origin in the CORS response
+  }else{
+    corsOptions = { origin: false } // disable CORS for this request
+  }
+  callback(null, corsOptions) // callback expects two parameters: error and options
+}
+
 
 // Listen to connections on "http://faucet:port/"
 // Respond with a status of being online.
-app.get('/', function(req, res){
+app.get('/', cors(corsOptionsDelegate), function(req, res){
 	var response = {
 		status: "online"
 	}
@@ -57,7 +71,7 @@ app.get('/', function(req, res){
 	res.send(JSON.stringify(response));
 })
 
-app.post('/check', upload.array(), function(req, res){
+app.post('/check', [upload.array(), cors(corsOptionsDelegate)], function(req, res){
 	var response = {
 		status: "online"
 	}
@@ -129,7 +143,7 @@ app.post('/check', upload.array(), function(req, res){
 })
 
 // Listen to conenctions on "http://faucet:port/faucet"
-app.post('/request', upload.array(), function (req, res) {
+app.post('/request', [cors(corsOptionsDelegate), upload.array()], function (req, res) {
 	// Make sure that we have body values
 	if (req.body){
 		if (req.body.currency_code){

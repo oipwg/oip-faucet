@@ -57,7 +57,7 @@ app.get('/', function(req, res){
 	res.send(JSON.stringify(response));
 })
 
-app.post('/check', upload.array(), functon(req, res){
+app.post('/check', upload.array(), function(req, res){
 	var response = {
 		status: "online"
 	}

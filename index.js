@@ -50,13 +50,86 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Listen to connections on "http://faucet:port/"
 // Respond with a status of being online.
 app.get('/', function(req, res){
-	res.send(JSON.stringify({
+	var response = {
 		status: "online"
-	}));
+	}
+
+	res.send(JSON.stringify(response));
+})
+
+app.post('/check', upload.array(), functon(req, res){
+	var response = {
+		status: "online"
+	}
+	// Make sure that we have body values
+	if (req.body){
+		if (req.body.currency_code){
+			// Create variable to track if the user submitted currency_code is supported
+			var currency_code_match = false;
+			var selected_coin = "";
+
+			for (var coin in config.coins){
+				// Check in each coin to see if the currency_code matches.
+				if (config.coins[coin].currency_code === req.body.currency_code){
+					// If it does match, set the variable to true
+					selected_coin = coin;
+					currency_code_match = true;
+				}
+			}
+
+			// Check to make sure that the currency_code is supported
+			if (currency_code_match){
+				var timestampInterval = config.coins[selected_coin].send_on_interval.interval_hrs * MINUTES * SECONDS * MILISECONDS;
+
+				var find_ip = db.get('interval').find(function(o) {
+					if (o.ip === req.ip && o.currency_code === req.body.currency_code){
+						if (Date.now() < o.timestamp + timestampInterval)
+							return true;
+						else 
+							return false;
+					} else
+						return false;
+				}).value();
+
+				if (find_ip){
+					response = {
+						success: true,
+						status: "ALREADY_RECEIVED_INTERVAL_FOR_NOW",
+						try_again_at: find_ip.timestamp + timestampInterval
+					}
+				} else {
+					response = {
+						success: true,
+						status: "READY"
+					}
+				}
+
+				res.send(JSON.stringify(response));
+			} else {
+				// User did not specify where they want their faucet funds to be sent.
+				res.send(JSON.stringify({
+					success: false,
+					error: "CURRENCY_CODE_NOT_SUPPORTED"
+				}))
+			}
+		} else {
+			// User did not include what kind of currency they want from the faucet, reject them.
+			res.send(JSON.stringify({
+				success: false,
+				error: "CURRENCY_CODE_IS_REQUIRED"
+			}))
+		}
+	} else {
+		// We have no body values, error out and tell the user to submit them.
+		res.send(JSON.stringify({
+			success: false,
+			error: "CURRENCY_CODE__DEPOSIT_ADDRESS_AND_RECAPTCHA2_ARE_REQUIRED"
+		}))
+	}
 })
 
 // Listen to conenctions on "http://faucet:port/faucet"
-app.post('/faucet', upload.array(), function (req, res) {
+app.post('/request', upload.array(), function (req, res) {
 	// Make sure that we have body values
 	if (req.body){
 		if (req.body.currency_code){

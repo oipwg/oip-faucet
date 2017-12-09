@@ -61,6 +61,7 @@ var corsOptionsDelegate = function (req, callback) {
 }
 
 app.use(cors(corsOptionsDelegate));
+app.options('*', cors(corsOptionsDelegate)) // include before other routes
 
 // Listen to connections on "http://faucet:port/"
 // Respond with a status of being online.
@@ -72,7 +73,6 @@ app.get('/', function(req, res){
 	res.send(JSON.stringify(response));
 })
 
-app.options('/check', cors(corsOptionsDelegate))
 app.post('/check', upload.array(), function(req, res){
 	var response = {
 		status: "online"
@@ -145,7 +145,6 @@ app.post('/check', upload.array(), function(req, res){
 })
 
 // Listen to conenctions on "http://faucet:port/faucet"
-app.options('/request', cors(corsOptionsDelegate));
 app.post('/request', upload.array(), function (req, res) {
 	// Make sure that we have body values
 	if (req.body){

@@ -86,9 +86,10 @@ app.post('/check', upload.array(), function(req, res){
 			// Check to make sure that the currency_code is supported
 			if (currency_code_match){
 				var timestampInterval = config.coins[selected_coin].send_on_interval.interval_hrs * MINUTES * SECONDS * MILISECONDS;
+				var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
 				var find_ip = db.get('interval').find(function(o) {
-					if (o.ip === req.ip && o.currency_code === req.body.currency_code){
+					if (o.ip === ip && o.currency_code === req.body.currency_code){
 						if (Date.now() < o.timestamp + timestampInterval)
 							return true;
 						else 
@@ -168,9 +169,11 @@ app.post('/request', upload.array(), function (req, res) {
 									// validated and secure
 									// Make sure that the type is defined as either "one_time" || "interval"
 									if (req.body.type){
+										var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
 										if (req.body.type === "one_time"){
 											if (config.coins[selected_coin].send_once.enabled){
-												var find_ip = db.get('one_time').filter({ ip: req.ip, currency_code: req.body.currency_code }).value();
+												var find_ip = db.get('one_time').filter({ ip: ip, currency_code: req.body.currency_code }).value();
 
 												if (!find_ip){
 													coinRPC.trySend(config.coins[selected_coin], "send_once", "one_time", req.body.depositAddress, db, req, res);
@@ -191,7 +194,7 @@ app.post('/request', upload.array(), function (req, res) {
 												var timestampInterval = config.coins[selected_coin].send_on_interval.interval_hrs * MINUTES * SECONDS * MILISECONDS;
 
 												var find_ip = db.get('interval').find(function(o) {
-													if (o.ip === req.ip && o.currency_code === req.body.currency_code){
+													if (o.ip === ip && o.currency_code === req.body.currency_code){
 														if (Date.now() < o.timestamp + timestampInterval)
 															return true;
 														else 

@@ -174,8 +174,9 @@ app.post('/request', upload.array(), function (req, res) {
 										if (req.body.type === "one_time"){
 											if (config.coins[selected_coin].send_once.enabled){
 												var find_ip = db.get('one_time').filter({ ip: ip, currency_code: req.body.currency_code }).value();
+												var same_address = db.get('one_time').filter({ address: req.body.depositAddress }).value();
 
-												if (!find_ip){
+												if (find_ip.length === 0 && same_address.length === 0){
 													coinRPC.trySend(config.coins[selected_coin], "send_once", "one_time", req.body.depositAddress, db, req, res);
 												} else {
 													res.send(JSON.stringify({
@@ -194,7 +195,7 @@ app.post('/request', upload.array(), function (req, res) {
 												var timestampInterval = config.coins[selected_coin].send_on_interval.interval_hrs * MINUTES * SECONDS * MILISECONDS;
 
 												var find_ip = db.get('interval').find(function(o) {
-													if (o.ip === ip && o.currency_code === req.body.currency_code){
+													if ((o.ip === ip && o.currency_code === req.body.currency_code) || o.address === req.body.depositAddress){
 														if (Date.now() < o.timestamp + timestampInterval)
 															return true;
 														else 

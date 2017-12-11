@@ -58,7 +58,7 @@ function trySend (coin, type, db_title, address, db, req, res){
 				"currency_code": req.body.currency_code,
 				"address": req.body.depositAddress,
 				"amount": coin[type].amount,
-				"ip": req.ip,
+				"ip": req.headers['x-forwarded-for'] || req.connection.remoteAddress,
 				"txid": success.txid, 
 				"status": "sent_successfully"
 			}).write();

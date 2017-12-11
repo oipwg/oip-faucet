@@ -10,7 +10,7 @@ function sendToAddress (coin, address, amount, onSuccess, onError){
 		pass: coin.rpc.password
 	});
 
-	client.sendToAddress(address, amount, function(err, result) {
+	client.sendfrom("faucet", address, amount, function(err, result) {
 		if (err){
 			onError(err);
 		} else {

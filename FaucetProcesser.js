@@ -77,7 +77,6 @@ class FaucetProcesser {
 
 	validateRecaptcha(onSuccess, onError){
 		if (config.recaptcha2.enabled) {
-			console.log("Recaptcha Test");
 			recaptcha.validate(this.options_.recaptcha2)
 			.then(onSuccess)
 			.catch(function(errorCodes){
@@ -87,7 +86,6 @@ class FaucetProcesser {
 				onError("RECAPTCHA2_IS_INVALID", error);
 			});	
 		} else {
-			console.log("bypass");
 			onSuccess(true)
 		}
 	}

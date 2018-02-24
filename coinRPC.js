@@ -10,9 +10,11 @@ function sendToAddress (coin, address, amount, onSuccess, onError){
 		pass: coin.rpc.password
 	});
 
-	client.sendFrom("faucet", address, amount, function(err, result) {
+	console.log(coin.wallet, amount, address);
+
+	var callback = function(err, result) {
 		if (err){
-			onError(err);
+			onError("Error Sending From faucet", err);
 		} else {
 			try {
 				client.getRawTransaction(result, 1, function(err, res){
@@ -28,7 +30,12 @@ function sendToAddress (coin, address, amount, onSuccess, onError){
 				onSuccess(result);
 			}
 		}
-	})
+	}
+
+	if (coin.wallet === "")
+		client.sendToAddress(address, amount, callback)
+	else
+		client.sendFrom(coin.wallet, address, amount, callback)
 }
 
 function sendCoins (coin, currency, amount, address, onSuccess, onError){
@@ -37,6 +44,8 @@ function sendCoins (coin, currency, amount, address, onSuccess, onError){
 			if (currency = coin.currency_endpoints[currency_id].currency_code){
 				util.getCurrencyValue(coin.currency_endpoints[currency_id], function(currency_value_per_coin){
 					var paymentAmount = amount / currency_value_per_coin;
+
+					paymentAmount = parseFloat(paymentAmount.toFixed(8));
 
 					sendToAddress(coin, address, paymentAmount, onSuccess, onError);
 				}, function (error){
@@ -50,36 +59,11 @@ function sendCoins (coin, currency, amount, address, onSuccess, onError){
 	}
 }
 
-function trySend (coin, type, db_title, address, db, req, res){
+function trySend (coin, type, address, onSuccess, onError){
 	try {
-		sendCoins(coin, coin[type].currency, coin[type].amount, address, function(success){
-			db.get(db_title).push({
-				"timestamp": Date.now(),
-				"currency_code": req.body.currency_code,
-				"address": req.body.depositAddress,
-				"amount": coin[type].amount,
-				"ip": req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-				"txid": success.txid, 
-				"status": "sent_successfully"
-			}).write();
-
-			res.send(JSON.stringify({
-				"success": true,
-				"info": success
-			}))
-		}, function(error){
-			console.log(error);
-			res.send(JSON.stringify({
-				"success": false,
-				"error": error
-			}))
-		})
+		sendCoins(coin, coin[type].currency, coin[type].amount, address, onSuccess, onError)
 	} catch (error) {
-		console.log(error);
-		res.send(JSON.stringify({
-			"success": false,
-			"error": "ERROR_SENDING_COINS_TRY_AGAIN_LATER"
-		}))
+		onError("Error sending coins, try again later...")
 	}
 }
 

@@ -10,6 +10,7 @@ try {
 module.exports = {
 	"port": 9090,
 	"recaptcha2": {
+		"enabled": true,
 		"site_key": passwords.recaptcha2.site_key,
 		"secret_key": passwords.recaptcha2.secret_key
 	},
@@ -18,20 +19,23 @@ module.exports = {
 			"currency_code": "FLO",
 			"rpc": {
 				"hostname": "localhost",
-				"port": "18332",
+				"port": 7313,
 				"username": passwords.coins.florincoin.rpc.username,
 				"password": passwords.coins.florincoin.rpc.password
 			},
 			"send_once": {
 				"enabled": true,
 				"amount": 1,
-				"currency": "FLO"
+				"currency": "FLO",
+				"restrict_ip": true
 			},
 			"send_on_interval": {
 				"enabled": true,
 				"interval_hrs": 24,
 				"amount": 0.005,
-				"currency": "USD"
+				"currency": "USD",
+				"restrict_address": true,
+				"restrict_ip": true
 			},
 			"currency_endpoints": {
 				"usd": {
@@ -49,7 +53,8 @@ module.exports = {
 			"network": {
 				"pubKeyHash": 35,
 				"scriptHash": 8
-			}
+			},
+			"wallet": ""
 		}
 	}
 }

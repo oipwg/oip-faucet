@@ -14,6 +14,7 @@ function sendToAddress (coin, address, amount, onSuccess, onError){
 
 	var callback = function(err, result) {
 		if (err){
+			console.log("Error sending from faucet!", err);
 			onError("Error Sending From faucet", err);
 		} else {
 			try {
@@ -32,10 +33,13 @@ function sendToAddress (coin, address, amount, onSuccess, onError){
 		}
 	}
 
-	if (coin.wallet === "")
+	if (coin.wallet === ""){
+		console.log("Send To Address")
 		client.sendToAddress(address, amount, callback)
-	else
+	} else {
+		console.log("Send From " + coin.wallet + " To Address")
 		client.sendFrom(coin.wallet, address, amount, callback)
+	}
 }
 
 function sendCoins (coin, currency, amount, address, onSuccess, onError){

@@ -19,7 +19,7 @@ function sendToAddress (coin, address, amount, onSuccess, onError){
 		} else {
 			try {
 				// Wait a bit...
-				await async () => { let res = Promise.resolve; setTimeout(() => {res()}, 100) }
+				await async function (){ let res = Promise.resolve; setTimeout(function(){res()}, 100) }
 
 				client.getRawTransaction(result, 1, function(err, res){
 					if (err){
